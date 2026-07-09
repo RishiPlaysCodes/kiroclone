@@ -1,92 +1,91 @@
-# Kiro Clone - Free AI Coding Assistant
+# KiroClone IDE - Free AI-Powered Coding Assistant
 
-A free, open-source AI-powered coding assistant inspired by Kiro. Build apps, fix bugs, and learn programming — all from your browser.
+> Better than paid tools. Free forever. Your keys, your data.
 
-## Features
+![Version](https://img.shields.io/badge/version-2.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-- **AI Chat Assistant** - Ask questions, generate code, fix bugs, get explanations
-- **Code Editor** - Full-featured editor with line numbers, tabs, and keyboard shortcuts
-- **File Explorer** - Create, edit, and manage project files
-- **Project Templates** - Start new projects from pre-built templates (React, Node.js, Vanilla JS, Python)
-- **Dark/Light Theme** - Toggle between themes
-- **Keyboard Shortcuts** - Ctrl+S (save), Ctrl+B (toggle sidebar), Ctrl+Shift+N (new project)
+## What is this?
+
+KiroClone is a **free, open-source AI-powered IDE** that runs in your browser. It connects to free AI models (Groq, Together AI, OpenRouter, Ollama) and lets you:
+
+- **Chat with AI** - Ask questions, generate code, fix bugs
+- **Autonomous Mode** - Describe what to build → AI creates ALL files automatically
+- **GitHub Integration** - Push code directly to your repos
+- **Code Editor** - Full editor with tabs, line numbers, shortcuts
 
 ## Quick Start
 
 ```bash
-# No dependencies needed! Just run:
+git clone https://github.com/RishiPlaysCodes/kiroclone.git
+cd kiroclone
 node server/index.js
-
 # Open http://localhost:3000
 ```
 
-## How It Works
+## Get Free API Keys (60 seconds setup)
 
-The app runs entirely as a standalone Node.js application with:
-- **Zero external dependencies** - Uses only Node.js built-in modules
-- **Built-in AI Engine** - Pattern-matching code intelligence (can be extended to use Ollama, HuggingFace, or any free AI API)
-- **In-browser file management** - Projects stored locally on disk
-- **Modern responsive UI** - Works on desktop and mobile
+| Provider | Free Tier | Get Key |
+|----------|-----------|---------|
+| **Groq** | 30 req/min, fastest inference | [console.groq.com](https://console.groq.com) |
+| **Together AI** | $1 free credit | [api.together.xyz](https://api.together.xyz) |
+| **OpenRouter** | Free models available | [openrouter.ai](https://openrouter.ai) |
+| **Ollama** | Unlimited (local) | [ollama.ai](https://ollama.ai) |
 
-## Extending with Real AI
+## Features
 
-To connect a real AI model, edit `server/ai-engine.js`:
+### 🤖 Real AI Models (not pattern matching!)
+Connect to actual LLMs - Llama 3.3 70B, DeepSeek V3, Qwen Coder, Mixtral
 
-```javascript
-// Example: Connect to Ollama (free, local AI)
-async chat(messages, context) {
-  const response = await fetch('http://localhost:11434/api/chat', {
-    method: 'POST',
-    body: JSON.stringify({ model: 'codellama', messages }),
-  });
-  const data = await response.json();
-  return data.message.content;
-}
+### ⚡ Autonomous Mode
+Tell the AI: "Create a full todo app with React"
+→ AI generates ALL files → Files saved automatically to your project
+
+### 🔗 GitHub Integration
+- Connect with Personal Access Token
+- Browse your repos
+- Push files directly from the IDE
+
+### 📝 Code Editor
+- Syntax-aware editing
+- Multiple file tabs
+- Ctrl+S to save
+- Line numbers
+
+### 🔒 Privacy First
+- API keys stored in YOUR browser (localStorage)
+- Keys are sent directly from browser to AI provider
+- Our server never sees your keys
+
+## Architecture
+
 ```
-
-## Project Structure
-
-```
-kiro-clone/
+kiroclone/
 ├── server/
-│   ├── index.js          # HTTP server
-│   ├── api.js            # API route handler
-│   ├── ai-engine.js      # AI/code intelligence engine
-│   ├── file-manager.js   # File operations
-│   └── template-manager.js # Project templates
+│   ├── index.js           # HTTP server
+│   ├── api.js             # API routes
+│   ├── ai-providers.js    # Multi-provider AI config
+│   ├── github-integration.js  # GitHub API
+│   ├── autonomous.js      # Autonomous task engine
+│   └── file-manager.js    # File operations
 ├── public/
-│   ├── index.html        # Main app page
-│   ├── css/
-│   │   ├── main.css      # Core styles & themes
-│   │   ├── sidebar.css   # File explorer styles
-│   │   ├── chat.css      # Chat interface styles
-│   │   └── editor.css    # Code editor styles
+│   ├── index.html         # Main UI
+│   ├── css/               # Styles (dark/light themes)
 │   └── js/
-│       ├── app.js        # Main app controller
-│       ├── chat.js       # Chat interface
-│       ├── editor.js     # Code editor
-│       └── files.js      # File explorer
-├── user-projects/        # User's created projects
-├── package.json
-└── README.md
+│       ├── app.js         # Main controller
+│       ├── ai.js          # AI client (direct API calls)
+│       ├── editor.js      # Code editor
+│       ├── files.js       # File explorer
+│       ├── github.js      # GitHub client
+│       ├── store.js       # localStorage state
+│       └── settings.js    # Settings panel
+└── user-projects/         # Local projects
 ```
 
-## API Endpoints
+## Zero Dependencies
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/chat` | Send message to AI assistant |
-| POST | `/api/generate` | Generate code from prompt |
-| POST | `/api/explain` | Explain code snippet |
-| POST | `/api/refactor` | Refactor code |
-| GET | `/api/templates` | List project templates |
-| POST | `/api/projects/create` | Create project from template |
-| GET | `/api/projects` | List all projects |
-| GET | `/api/files?projectId=x` | List project files |
-| POST | `/api/files` | Create/save file |
-| POST | `/api/files/read` | Read file content |
-| DELETE | `/api/files` | Delete file |
+No npm install needed. Just Node.js. The entire app is self-contained.
 
 ## License
 
-MIT - Free to use, modify, and distribute.
+MIT - Use it, fork it, make it better.

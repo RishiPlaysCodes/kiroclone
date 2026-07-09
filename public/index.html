@@ -3,158 +3,160 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kiro Clone - AI Coding Assistant</title>
+  <title>KiroClone - AI-Powered IDE</title>
   <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/chat.css">
   <link rel="stylesheet" href="/css/editor.css">
-  <link rel="stylesheet" href="/css/sidebar.css">
+  <link rel="stylesheet" href="/css/settings.css">
 </head>
 <body>
   <div id="app">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="btn-icon" id="toggle-sidebar" title="Toggle Sidebar">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    <!-- Activity Bar (left icons) -->
+    <aside class="activity-bar" id="activity-bar">
+      <div class="activity-top">
+        <button class="activity-btn active" data-panel="explorer" title="Explorer">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
         </button>
-        <div class="logo">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2L2 7l10 5 10-5-10-5z" fill="#6366f1"/>
-            <path d="M2 17l10 5 10-5" stroke="#6366f1" stroke-width="2" fill="none"/>
-            <path d="M2 12l10 5 10-5" stroke="#818cf8" stroke-width="2" fill="none"/>
-          </svg>
-          <span class="logo-text">Kiro Clone</span>
-        </div>
-      </div>
-      <div class="topbar-center">
-        <div class="project-selector" id="project-selector">
-          <span id="current-project">No Project</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-        </div>
-      </div>
-      <div class="topbar-right">
-        <button class="btn-icon" id="new-project-btn" title="New Project">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        <button class="activity-btn" data-panel="chat" title="AI Chat">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         </button>
-        <button class="btn-icon" id="theme-toggle" title="Toggle Theme">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <button class="activity-btn" data-panel="github" title="GitHub">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        </button>
+        <button class="activity-btn" data-panel="autonomous" title="Autonomous Mode">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         </button>
       </div>
-    </header>
+      <div class="activity-bottom">
+        <button class="activity-btn" data-panel="settings" title="Settings">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15 1.65 1.65 0 003.17 14H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68 1.65 1.65 0 0010 3.17V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        </button>
+      </div>
+    </aside>
 
-    <div class="main-container">
-      <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-          <h3>Explorer</h3>
-          <div class="sidebar-actions">
-            <button class="btn-icon btn-sm" id="new-file-btn" title="New File">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15h6"/></svg>
-            </button>
-            <button class="btn-icon btn-sm" id="new-folder-btn" title="New Folder">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>
-            </button>
+    <!-- Sidebar Panel -->
+    <aside class="sidebar-panel" id="sidebar-panel">
+      <!-- Explorer Panel -->
+      <div class="panel-content" id="panel-explorer">
+        <div class="panel-header">
+          <h3>EXPLORER</h3>
+          <div class="panel-actions">
+            <button class="icon-btn" id="btn-new-file" title="New File">+</button>
+            <button class="icon-btn" id="btn-new-project" title="New Project">⊕</button>
           </div>
         </div>
         <div class="file-tree" id="file-tree">
-          <div class="empty-state"><p>No project open</p>
-            <button class="btn btn-sm btn-primary" id="sidebar-new-project">Create Project</button>
-          </div>
+          <div class="empty-state"><p>No project open</p><button class="btn btn-sm" id="open-project-btn">Create Project</button></div>
         </div>
-      </aside>
-      <div class="content-area">
-        <div class="tabs-bar" id="tabs-bar">
-          <div class="tabs-list" id="tabs-list"></div>
-          <div class="tabs-actions">
-            <button class="btn-icon btn-sm" id="split-view-btn" title="Toggle Chat">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18"/></svg>
+      </div>
+
+      <!-- Chat Panel -->
+      <div class="panel-content hidden" id="panel-chat">
+        <div class="panel-header">
+          <h3>AI CHAT</h3>
+          <button class="icon-btn" id="clear-chat-btn" title="Clear">🗑</button>
+        </div>
+        <div class="model-selector" id="model-selector">
+          <select id="provider-select"><option value="">Select Provider</option></select>
+          <select id="model-select"><option value="">Select Model</option></select>
+        </div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input-area">
+          <div class="mode-toggle">
+            <button class="mode-btn active" data-mode="chat">Chat</button>
+            <button class="mode-btn" data-mode="autonomous">Auto</button>
+          </div>
+          <div class="input-wrapper">
+            <textarea id="chat-input" placeholder="Ask anything... (Enter to send)" rows="1"></textarea>
+            <button class="send-btn" id="send-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
             </button>
           </div>
         </div>
-        <div class="split-container" id="split-container">
-          <div class="editor-panel" id="editor-panel">
-            <div class="editor-welcome" id="editor-welcome">
-              <div class="welcome-content">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z" fill="#6366f1" opacity="0.8"/>
-                  <path d="M2 17l10 5 10-5" stroke="#6366f1" stroke-width="2" fill="none"/>
-                  <path d="M2 12l10 5 10-5" stroke="#818cf8" stroke-width="2" fill="none"/>
-                </svg>
-                <h2>Welcome to Kiro Clone</h2>
-                <p>Your free AI-powered coding assistant</p>
-                <div class="welcome-actions">
-                  <button class="btn btn-primary" id="welcome-new-project">New Project</button>
-                  <button class="btn btn-secondary" id="welcome-chat">Start Chat</button>
-                </div>
-              </div>
-            </div>
-            <div class="editor-container" id="editor-container" style="display:none;">
-              <div class="editor-info-bar"><span id="editor-filename"></span><span id="editor-language"></span></div>
-              <div class="editor-wrapper">
-                <div class="line-numbers" id="line-numbers"></div>
-                <textarea class="code-editor" id="code-editor" spellcheck="false"></textarea>
-              </div>
-              <div class="editor-status-bar">
-                <span id="cursor-position">Ln 1, Col 1</span>
-                <span id="file-status">Ready</span>
-                <button class="btn btn-sm btn-primary" id="save-file-btn">Save</button>
-              </div>
-            </div>
-          </div>
+      </div>
 
-          <div class="chat-panel" id="chat-panel">
-            <div class="chat-header"><h3>AI Assistant</h3>
-              <button class="btn-icon btn-sm" id="clear-chat" title="Clear Chat">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              </button>
-            </div>
-            <div class="chat-messages" id="chat-messages">
-              <div class="message assistant">
-                <div class="message-avatar">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" fill="#6366f1"/><path d="M2 12l10 5 10-5" stroke="#818cf8" stroke-width="2" fill="none"/></svg>
-                </div>
-                <div class="message-content">
-                  <p>Hello! I'm <strong>Kiro Clone</strong>, your AI coding assistant.</p>
-                  <ul><li>Create projects and components</li><li>Fix bugs and explain code</li><li>Generate tests and refactor</li></ul>
-                  <p>What would you like to build today?</p>
-                </div>
-              </div>
-            </div>
-            <div class="chat-input-container">
-              <div class="chat-input-wrapper">
-                <textarea class="chat-input" id="chat-input" placeholder="Ask me anything about coding..." rows="1"></textarea>
-                <button class="btn-send" id="send-btn" title="Send">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-                </button>
-              </div>
-              <div class="chat-hints">
-                <span class="hint" data-prompt="Create a React component">Create component</span>
-                <span class="hint" data-prompt="Fix this bug">Fix bug</span>
-                <span class="hint" data-prompt="Explain async/await">Explain code</span>
-                <span class="hint" data-prompt="Write tests">Write tests</span>
-              </div>
-            </div>
+      <!-- GitHub Panel -->
+      <div class="panel-content hidden" id="panel-github">
+        <div class="panel-header"><h3>GITHUB</h3></div>
+        <div id="github-content">
+          <div class="github-connect" id="github-connect">
+            <p>Connect your GitHub account to push code directly.</p>
+            <input type="password" id="github-token" placeholder="Personal Access Token">
+            <button class="btn btn-sm" id="github-connect-btn">Connect</button>
+            <p class="hint">Get token: github.com/settings/tokens</p>
+          </div>
+          <div class="github-repos hidden" id="github-repos"></div>
+        </div>
+      </div>
+
+      <!-- Autonomous Panel -->
+      <div class="panel-content hidden" id="panel-autonomous">
+        <div class="panel-header"><h3>AUTONOMOUS</h3></div>
+        <div class="auto-info">
+          <p>🤖 Tell the AI what to build and it will create all files automatically.</p>
+          <div class="auto-input">
+            <textarea id="auto-prompt" placeholder="Describe what to build... e.g. 'Create a full todo app with React'" rows="4"></textarea>
+            <button class="btn btn-primary" id="auto-execute-btn">⚡ Execute</button>
+          </div>
+          <div id="auto-status"></div>
+        </div>
+      </div>
+
+      <!-- Settings Panel -->
+      <div class="panel-content hidden" id="panel-settings">
+        <div class="panel-header"><h3>SETTINGS</h3></div>
+        <div class="settings-content" id="settings-content"></div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="tabs-bar" id="tabs-bar">
+        <div class="tabs-list" id="tabs-list"></div>
+      </div>
+      <div class="editor-area" id="editor-area">
+        <div class="welcome-screen" id="welcome-screen">
+          <div class="welcome-logo">
+            <svg width="72" height="72" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" fill="#6366f1" opacity="0.9"/>
+              <path d="M2 17l10 5 10-5" stroke="#6366f1" stroke-width="2" fill="none"/>
+              <path d="M2 12l10 5 10-5" stroke="#818cf8" stroke-width="2" fill="none"/>
+            </svg>
+          </div>
+          <h1>KiroClone IDE</h1>
+          <p class="tagline">AI-Powered Coding • Free Forever • Better Than Paid Tools</p>
+          <div class="welcome-features">
+            <div class="feature-card"><span>🤖</span><h4>Real AI Models</h4><p>Groq, Together AI, OpenRouter, Ollama - all free</p></div>
+            <div class="feature-card"><span>⚡</span><h4>Autonomous Mode</h4><p>Describe what to build, AI creates everything</p></div>
+            <div class="feature-card"><span>🔗</span><h4>GitHub Integration</h4><p>Push code directly to your repos</p></div>
+            <div class="feature-card"><span>📝</span><h4>Full Code Editor</h4><p>Edit with tabs, syntax, shortcuts</p></div>
+          </div>
+          <div class="welcome-actions">
+            <button class="btn btn-primary btn-lg" id="welcome-start">Get Started</button>
+          </div>
+        </div>
+        <div class="editor-container hidden" id="editor-container">
+          <div class="editor-info"><span id="ed-filename"></span><span id="ed-lang"></span></div>
+          <div class="editor-body">
+            <div class="line-nums" id="line-nums"></div>
+            <textarea class="code-textarea" id="code-textarea" spellcheck="false"></textarea>
+          </div>
+          <div class="status-bar">
+            <span id="cursor-pos">Ln 1, Col 1</span>
+            <span id="file-status">Ready</span>
+            <button class="btn btn-xs" id="save-btn">Ctrl+S Save</button>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   </div>
-  <div class="modal-overlay" id="modal-overlay" style="display:none;">
-    <div class="modal">
-      <div class="modal-header"><h3>Create New Project</h3>
-        <button class="btn-icon" id="close-modal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group"><label for="project-name">Project Name</label><input type="text" id="project-name" placeholder="my-awesome-project"></div>
-        <div class="form-group"><label>Template</label><div class="template-grid" id="template-grid"></div></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" id="cancel-modal">Cancel</button>
-        <button class="btn btn-primary" id="create-project-btn">Create Project</button>
-      </div>
-    </div>
-  </div>
-  <script src="/js/app.js"></script>
-  <script src="/js/chat.js"></script>
+  <script src="/js/store.js"></script>
+  <script src="/js/ai.js"></script>
   <script src="/js/editor.js"></script>
   <script src="/js/files.js"></script>
+  <script src="/js/github.js"></script>
+  <script src="/js/settings.js"></script>
+  <script src="/js/app.js"></script>
 </body>
 </html>

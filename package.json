@@ -1,13 +1,13 @@
 {
-  "name": "kiro-clone",
-  "version": "1.0.0",
-  "description": "AI-powered coding assistant - free and open source",
+  "name": "kiroclone",
+  "version": "2.0.0",
+  "description": "AI-Powered IDE - Better than Kiro, Free forever. Real AI models, GitHub integration, Autonomous coding.",
   "main": "server/index.js",
   "type": "module",
   "scripts": {
     "start": "node server/index.js",
-    "dev": "node server/index.js"
+    "dev": "node --watch server/index.js"
   },
-  "keywords": ["ai", "coding", "assistant", "developer-tools"],
+  "keywords": ["ai", "ide", "coding", "assistant", "github", "autonomous", "free"],
   "license": "MIT"
 }
