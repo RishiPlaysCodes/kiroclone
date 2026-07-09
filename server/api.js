@@ -87,50 +87,13 @@ export async function handleApiRequest(req, res) {
       }
     }
 
-    // === AI STREAMING via Server ===
-    if (p === '/api/chat/stream' && req.method === 'POST') {
+    // === AI CHAT CONFIG (returns config for reference, not used for actual calls) ===
+    if (p === '/api/chat/config' && req.method === 'POST') {
       const { provider, apiKey, model, messages, mode } = await parseBody(req);
-      if (!provider || !model || !messages) return error(res, 'provider, model, messages required');
-
       const systemPrompt = ai.getSystemPrompt(mode || 'chat');
       const fullMessages = [{ role: 'system', content: systemPrompt }, ...messages];
-      const config = await ai.chat(provider, apiKey, model, fullMessages, true);
-
-      // Set up SSE
-      res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      });
-
-      const parsed = new URL(config.url);
-      const lib = parsed.protocol === 'https:' ? https : http;
-      const reqOptions = {
-        hostname: parsed.hostname,
-        port: parsed.port,
-        path: parsed.pathname + parsed.search,
-        method: 'POST',
-        headers: config.headers,
-      };
-
-      const proxyReq = lib.request(reqOptions, (proxyRes) => {
-        proxyRes.on('data', chunk => {
-          res.write(chunk);
-        });
-        proxyRes.on('end', () => {
-          res.write('data: [DONE]\n\n');
-          res.end();
-        });
-      });
-
-      proxyReq.on('error', (e) => {
-        res.write(`data: ${JSON.stringify({ error: e.message })}\n\n`);
-        res.end();
-      });
-
-      proxyReq.write(JSON.stringify(config.body));
-      proxyReq.end();
-      return;
+      const config = await ai.chat(provider, apiKey, model, fullMessages, false);
+      return json(res, { config });
     }
 
     // === PROVIDERS & MODELS ===

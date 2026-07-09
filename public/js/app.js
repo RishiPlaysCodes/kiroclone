@@ -142,58 +142,63 @@ class App {
       const prompt = document.getElementById('auto-prompt')?.value?.trim();
       if (!prompt) return;
       const statusEl = document.getElementById('auto-status');
-      statusEl.innerHTML = '<div class="auto-step running">🔄 Sending to AI...</div>';
+      statusEl.innerHTML = '<div class="auto-step running">🔄 Starting...</div>';
 
       try {
+        const { provider, model, apiKey } = AI.getConfig();
+        if (!provider || !model) {
+          statusEl.innerHTML = '<p style="color:var(--error)">❌ Pehle AI Chat panel me jaake Provider aur Model select karo!</p>';
+          return;
+        }
+        if (!apiKey && provider !== 'ollama') {
+          statusEl.innerHTML = '<p style="color:var(--error)">❌ Settings (gear icon) me jaake API key daalo!</p>';
+          return;
+        }
+
         // Ensure project exists
         if (!Files.projectId) {
           const name = prompt.split(' ').slice(0, 3).join('-').toLowerCase().replace(/[^a-z0-9-]/g,'') || 'auto-project';
           const r = await fetch('/api/projects/create', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name }) });
           const d = await r.json();
-          Files.load(d.project.id);
+          if (d.project) Files.load(d.project.id);
         }
 
-        const { provider, model, apiKey } = AI.getConfig();
-        if (!provider || !model) { statusEl.innerHTML = '<p style="color:var(--error)">Select provider & model first!</p>'; return; }
+        statusEl.innerHTML = '<div class="auto-step running">🤖 AI is generating code... (may take 10-30 sec)</div>';
 
-        // Build autonomous prompt
-        const sysPrompt = `You are KiroClone AI in AUTONOMOUS MODE. Generate COMPLETE files with format: \`\`\`language:filepath\\ncontent\\n\`\`\`. Never use placeholders.`;
-        const messages = [{ role: 'system', content: sysPrompt }, { role: 'user', content: prompt }];
-
-        const configRes = await fetch('/api/chat/config', {
-          method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ provider, apiKey, model, messages, mode: 'autonomous' })
+        // Call server-side autonomous endpoint (handles AI call + file saving)
+        const res = await fetch('/api/autonomous/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt,
+            provider,
+            apiKey,
+            model,
+            projectId: Files.projectId,
+            taskId: Date.now().toString()
+          })
         });
-        const { config } = await configRes.json();
 
-        statusEl.innerHTML = '<div class="auto-step running">🤖 AI is generating code...</div>';
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `Server error: ${res.status}`);
+        }
 
-        const aiRes = await fetch(config.url, {
-          method: 'POST', headers: config.headers,
-          body: JSON.stringify({ ...config.body, stream: false, max_tokens: 16384 })
-        });
-        const aiData = await aiRes.json();
-        const reply = aiData.choices?.[0]?.message?.content || '';
+        const data = await res.json();
 
-        statusEl.innerHTML = '<div class="auto-step running">💾 Saving files...</div>';
-
-        const saveRes = await fetch('/api/autonomous/execute', {
-          method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ taskId: Date.now().toString(), response: reply, projectId: Files.projectId })
-        });
-        const saveData = await saveRes.json();
-
-        if (saveData.files?.length > 0) {
-          statusEl.innerHTML = `<div class="auto-step done">✅ Created ${saveData.files.length} files:</div>` +
-            saveData.files.map(f => `<div class="auto-step done">📄 ${f.path}</div>`).join('');
+        if (data.files?.length > 0) {
+          statusEl.innerHTML = `<div class="auto-step done">✅ Created ${data.files.length} files:</div>` +
+            data.files.map(f => `<div class="auto-step done">📄 ${f.path}</div>`).join('');
           Files.load(Files.projectId);
         } else {
-          statusEl.innerHTML = '<div class="auto-step done">✅ Done (no files extracted - check chat)</div>';
+          statusEl.innerHTML = '<div class="auto-step done">✅ Done - response below in chat</div>';
         }
 
-        // Also show in chat
-        this.switchPanel('chat');
-        this.addMsg('assistant', reply);
+        // Show AI response in chat too
+        if (data.response) {
+          this.switchPanel('chat');
+          this.addMsg('assistant', data.response);
+        }
       } catch (e) {
         statusEl.innerHTML = `<p style="color:var(--error)">❌ ${e.message}</p>`;
       }
