@@ -75,7 +75,12 @@ export async function handleApiRequest(req, res) {
       });
 
       if (response.status !== 200) {
-        return error(res, `AI API Error (${response.status}): ${response.body}`, response.status);
+        let errMsg = response.body;
+        try {
+          const errData = JSON.parse(response.body);
+          errMsg = errData.error?.message || errData.message || response.body;
+        } catch {}
+        return error(res, `AI Error: ${errMsg}`, 502);
       }
 
       try {
@@ -110,7 +115,8 @@ export async function handleApiRequest(req, res) {
         const systemPrompt = ai.getSystemPrompt('autonomous');
         const fullMessages = [{ role: 'system', content: systemPrompt }, { role: 'user', content: prompt }];
         const config = await ai.chat(provider, apiKey, model, fullMessages, false);
-        config.body.max_tokens = 16384;
+        // Keep max_tokens reasonable for free tiers
+        config.body.max_tokens = 4096;
 
         const aiRes = await serverFetch(config.url, {
           method: 'POST',
@@ -119,7 +125,12 @@ export async function handleApiRequest(req, res) {
         });
 
         if (aiRes.status !== 200) {
-          return error(res, `AI Error: ${aiRes.body}`, 500);
+          let errMsg = aiRes.body;
+          try {
+            const errData = JSON.parse(aiRes.body);
+            errMsg = errData.error?.message || errData.message || aiRes.body;
+          } catch {}
+          return error(res, `AI Error: ${errMsg}`, 502);
         }
 
         const aiData = JSON.parse(aiRes.body);

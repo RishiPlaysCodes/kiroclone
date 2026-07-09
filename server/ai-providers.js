@@ -11,8 +11,8 @@ export class AIProviders {
         name: 'Groq',
         baseUrl: 'https://api.groq.com/openai/v1',
         models: [
-          { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B', context: 131072 },
-          { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B (Fast)', context: 131072 },
+          { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B (Recommended - High Limits)', context: 131072 },
+          { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B (Smart but Low Limits)', context: 32768 },
           { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B', context: 32768 },
           { id: 'gemma2-9b-it', name: 'Gemma 2 9B', context: 8192 },
         ],
@@ -66,29 +66,10 @@ export class AIProviders {
   }
 
   getSystemPrompt(mode = 'chat') {
-    const base = `You are KiroClone AI, an expert coding assistant. You help developers write, fix, explain, and refactor code. You are better than any other AI coding tool because you are free and powerful.
-
-Rules:
-- Always provide complete, working code
-- Use modern best practices
-- Include comments for complex logic
-- If creating files, wrap them in code blocks with the filename as a comment at the top
-- Be concise but thorough`;
+    const base = `You are KiroClone AI, an expert coding assistant. Write complete, working code. Use modern best practices. Be concise.`;
 
     if (mode === 'autonomous') {
-      return base + `\n\nYou are in AUTONOMOUS MODE. You will:
-1. Analyze the user's request completely
-2. Plan all necessary steps
-3. Generate ALL files needed (complete implementations, not stubs)
-4. Output each file in a code block with format: \`\`\`language:filepath
-5. After all files, provide a summary of what was created
-
-Example format:
-\`\`\`javascript:src/index.js
-// complete file content here
-\`\`\`
-
-Generate production-ready, complete code. Never use placeholders or TODOs.`;
+      return base + ` AUTONOMOUS MODE: Generate ALL files. Use format: \`\`\`language:filepath\ncode\n\`\`\` for each file. Complete code only.`;
     }
 
     return base;
@@ -115,7 +96,7 @@ Generate production-ready, complete code. Never use placeholders or TODOs.`;
       messages,
       stream,
       temperature: 0.7,
-      max_tokens: 8192,
+      max_tokens: 4096,
     };
 
     return { url, headers, body };
