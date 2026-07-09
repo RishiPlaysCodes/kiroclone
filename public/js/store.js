@@ -1,31 +1,18 @@
-/**
- * Store - localStorage wrapper for settings/state
- */
-const Store = {
-  get(key, fallback = null) {
-    try { const v = localStorage.getItem('kc_' + key); return v ? JSON.parse(v) : fallback; }
-    catch { return fallback; }
-  },
-  set(key, value) {
-    localStorage.setItem('kc_' + key, JSON.stringify(value));
-  },
-  remove(key) { localStorage.removeItem('kc_' + key); },
-
-  // Specific getters
-  getApiKey(provider) { return this.get(`key_${provider}`, ''); },
-  setApiKey(provider, key) { this.set(`key_${provider}`, key); },
-  getProvider() { return this.get('provider', 'groq'); },
-  setProvider(p) { this.set('provider', p); },
-  getModel() { return this.get('model', ''); },
-  setModel(m) { this.set('model', m); },
-  getGitHubToken() { return this.get('github_token', ''); },
-  setGitHubToken(t) { this.set('github_token', t); },
-  getTheme() { return this.get('theme', 'dark'); },
-  setTheme(t) { this.set('theme', t); document.documentElement.setAttribute('data-theme', t); },
-  getProject() { return this.get('current_project', ''); },
-  setProject(p) { this.set('current_project', p); },
+const S={
+  g(k,d=null){try{const v=localStorage.getItem('kc_'+k);return v?JSON.parse(v):d}catch{return d}},
+  s(k,v){localStorage.setItem('kc_'+k,JSON.stringify(v))},
+  key(p){return this.g(`key_${p}`,'')},
+  setKey(p,v){this.s(`key_${p}`,v)},
+  prov(){return this.g('prov','groq')},
+  setProv(v){this.s('prov',v)},
+  model(){return this.g('model','')},
+  setModel(v){this.s('model',v)},
+  proj(){return this.g('proj','')},
+  setProj(v){this.s('proj',v)},
+  ghToken(){return this.g('ght','')},
+  setGhToken(v){this.s('ght',v)},
+  theme(){return this.g('theme','dark')},
+  setTheme(v){this.s('theme',v);document.documentElement.setAttribute('data-theme',v)},
 };
-
-// Apply saved theme on load
-document.documentElement.setAttribute('data-theme', Store.getTheme());
-window.Store = Store;
+document.documentElement.setAttribute('data-theme',S.theme());
+window.S=S;

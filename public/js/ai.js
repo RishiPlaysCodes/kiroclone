@@ -1,97 +1,67 @@
 /**
- * AI Manager - All API calls go through OUR server (no CORS issues)
+ * AI - Server-proxied calls (no CORS)
  */
-class AIManager {
-  constructor() {
-    this.providers = [];
-    this.currentMode = 'chat';
-    this.messages = [];
-    this.isLoading = false;
-    this.init();
-  }
+const AI = {
+  providers: [],
+  msgs: [],
+  loading: false,
 
   async init() {
     try {
-      const res = await fetch('/api/providers');
-      const data = await res.json();
-      this.providers = data.providers;
-      this.populateSelectors();
-    } catch (e) { console.error('Failed to load providers:', e); }
-  }
+      const r = await fetch('/api/providers');
+      const d = await r.json();
+      this.providers = d.providers;
+      this.populateUI();
+    } catch {}
+  },
 
-  populateSelectors() {
-    const provSel = document.getElementById('provider-select');
-    const modelSel = document.getElementById('model-select');
-    if (!provSel) return;
-
-    provSel.innerHTML = '<option value="">-- Select Provider --</option>' +
-      this.providers.map(p => `<option value="${p.id}">${p.name}${p.free?' ✓ Free':''}</option>`).join('');
-
-    const saved = Store.getProvider();
-    if (saved) { provSel.value = saved; this.onProviderChange(saved); }
-
-    provSel.onchange = () => {
-      Store.setProvider(provSel.value);
-      this.onProviderChange(provSel.value);
-    };
-    modelSel.onchange = () => Store.setModel(modelSel.value);
-  }
-
-  onProviderChange(providerId) {
-    const modelSel = document.getElementById('model-select');
-    const provider = this.providers.find(p => p.id === providerId);
-    if (!provider) { modelSel.innerHTML = '<option>-- Select Model --</option>'; return; }
-    modelSel.innerHTML = provider.models.map(m =>
-      `<option value="${m.id}">${m.name} (${Math.round(m.context/1024)}K)</option>`
+  populateUI() {
+    const ps = document.getElementById('sel-provider');
+    const ms = document.getElementById('sel-model');
+    ps.innerHTML = this.providers.map(p =>
+      `<option value="${p.id}">${p.name}</option>`
     ).join('');
-    const savedModel = Store.getModel();
-    if (savedModel && provider.models.find(m => m.id === savedModel)) {
-      modelSel.value = savedModel;
-    } else {
-      modelSel.selectedIndex = 0;
-      Store.setModel(modelSel.value);
-    }
-  }
+    ps.value = S.prov() || this.providers[0]?.id;
+    ps.onchange = () => { S.setProv(ps.value); this.updateModels(); };
+    ms.onchange = () => S.setModel(ms.value);
+    this.updateModels();
+  },
 
-  getConfig() {
-    const provider = document.getElementById('provider-select')?.value || '';
-    const model = document.getElementById('model-select')?.value || '';
-    const apiKey = Store.getApiKey(provider);
-    return { provider, model, apiKey };
-  }
+  updateModels() {
+    const ms = document.getElementById('sel-model');
+    const p = this.providers.find(x => x.id === S.prov());
+    if (!p) return;
+    ms.innerHTML = p.models.map(m =>
+      `<option value="${m.id}">${m.name}</option>`
+    ).join('');
+    const saved = S.model();
+    if (saved && p.models.find(m => m.id === saved)) ms.value = saved;
+    else S.setModel(ms.value);
+  },
 
-  async sendMessage(content) {
-    const { provider, model, apiKey } = this.getConfig();
-    if (!provider || !model) throw new Error('Please select a provider and model (click AI Chat in sidebar)');
-    if (!apiKey && provider !== 'ollama') throw new Error(`Add your ${provider} API key in Settings (gear icon)`);
+  conf() {
+    return {
+      provider: document.getElementById('sel-provider')?.value,
+      model: document.getElementById('sel-model')?.value,
+      apiKey: S.key(document.getElementById('sel-provider')?.value)
+    };
+  },
 
-    this.messages.push({ role: 'user', content });
-
-    // Call OUR server which proxies to AI provider (no CORS!)
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        provider,
-        apiKey,
-        model,
-        messages: this.messages,
-        mode: this.currentMode
-      })
+  async send(content) {
+    const { provider, model, apiKey } = this.conf();
+    if (!provider || !model) throw new Error('Select provider & model');
+    if (!apiKey && provider !== 'ollama') throw new Error('Set API key in Settings ⚙️');
+    this.msgs.push({ role: 'user', content });
+    const r = await fetch('/api/chat', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ provider, apiKey, model, messages: this.msgs, mode: 'chat' })
     });
-
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || `Server error: ${res.status}`);
-    }
-
-    const data = await res.json();
-    const reply = data.response || 'No response';
-    this.messages.push({ role: 'assistant', content: reply });
+    if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error || 'AI Error'); }
+    const d = await r.json();
+    const reply = d.response || 'No response';
+    this.msgs.push({ role: 'assistant', content: reply });
     return reply;
-  }
+  },
 
-  clearMessages() { this.messages = []; }
-}
-
-window.AI = new AIManager();
+  clear() { this.msgs = []; }
+};
