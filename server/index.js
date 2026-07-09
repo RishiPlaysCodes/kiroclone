@@ -5,6 +5,17 @@ import { fileURLToPath } from 'url';
 import { handleApiRequest } from './api.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load .env file if exists
+try {
+  const envPath = path.join(__dirname, '..', '.env');
+  const envContent = fs.readFileSync(envPath, 'utf-8');
+  envContent.split('\n').forEach(line => {
+    const [key, ...val] = line.split('=');
+    if (key && !key.startsWith('#')) process.env[key.trim()] = val.join('=').trim();
+  });
+} catch {}
+
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const PORT = process.env.PORT || 3000;
 

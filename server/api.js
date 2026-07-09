@@ -61,11 +61,14 @@ export async function handleApiRequest(req, res) {
     if (p === '/api/chat' && req.method === 'POST') {
       const { provider, apiKey, model, messages, mode } = await parseBody(req);
       if (!provider || !model || !messages) return error(res, 'provider, model, messages required');
-      if (!apiKey && provider !== 'ollama') return error(res, `API key required for ${provider}`);
+      
+      // Use provided key, or fallback to env variable
+      const key = apiKey || process.env.OPENROUTER_KEY || '';
+      if (!key && provider !== 'ollama') return error(res, `API key required for ${provider}. Set in Settings or create .env file.`);
 
       const systemPrompt = ai.getSystemPrompt(mode || 'chat');
       const fullMessages = [{ role: 'system', content: systemPrompt }, ...messages];
-      const config = await ai.chat(provider, apiKey, model, fullMessages, false);
+      const config = await ai.chat(provider, key, model, fullMessages, false);
 
       // Make the actual API call from server (no CORS issues!)
       const response = await serverFetch(config.url, {
@@ -112,14 +115,15 @@ export async function handleApiRequest(req, res) {
     if (p === '/api/autonomous/plan' && req.method === 'POST') {
       const { prompt, provider, apiKey, model, projectId } = await parseBody(req);
       if (!prompt || !provider || !model) return error(res, 'prompt, provider, model required');
-      if (!apiKey && provider !== 'ollama') return error(res, 'API key required');
+      const key = apiKey || process.env.OPENROUTER_KEY || '';
+      if (!key && provider !== 'ollama') return error(res, 'API key required');
 
       const task = autonomous.createTask(prompt, projectId || 'default');
       autonomous.updateTask(task.id, { status: 'planning' });
 
       // Ask AI to create file plan
       const planPrompt = autonomous.getPlanPrompt(prompt);
-      const config = await ai.chat(provider, apiKey, model, [
+      const config = await ai.chat(provider, key, model, [
         { role: 'system', content: 'You are a project planner. Output only JSON arrays.' },
         { role: 'user', content: planPrompt }
       ], false);
@@ -157,10 +161,11 @@ export async function handleApiRequest(req, res) {
       const fileInfo = task.plan[fileIndex];
       if (!fileInfo) return error(res, 'File index out of range');
 
+      const key = apiKey || process.env.OPENROUTER_KEY || '';
       autonomous.updateTask(taskId, { status: 'generating', currentFile: fileInfo.path, progress: fileIndex });
 
       const filePrompt = autonomous.getFilePrompt(task.prompt, fileInfo.path, fileInfo.desc, task.completed);
-      const config = await ai.chat(provider, apiKey, model, [
+      const config = await ai.chat(provider, key, model, [
         { role: 'system', content: 'Output ONLY file content. No explanations, no markdown wrapping. Just the raw file code.' },
         { role: 'user', content: filePrompt }
       ], false);
