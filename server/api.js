@@ -324,6 +324,15 @@ export async function handleApiRequest(req, res) {
       return json(res, { project: await files.createProject(name) });
     }
 
+    // === DEFAULT CONFIG (auto-loads key from .env) ===
+    if (p === '/api/config' && req.method === 'GET') {
+      return json(res, {
+        hasKey: !!process.env.OPENROUTER_KEY,
+        defaultProvider: 'openrouter',
+        defaultModel: 'deepseek/deepseek-chat-v3-0324:free',
+      });
+    }
+
     error(res, 'Not found', 404);
   } catch (e) {
     console.error('API Error:', e);

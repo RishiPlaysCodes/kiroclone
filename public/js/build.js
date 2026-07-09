@@ -15,7 +15,7 @@ const Build = {
 
     const { provider, model, apiKey } = AI.conf();
     if (!provider || !model) { this.log('❌ Select provider & model first!','err'); return; }
-    if (!apiKey && provider !== 'ollama') { this.log('❌ Set API key in Settings ⚙️','err'); return; }
+    if (!apiKey && !AI.serverHasKey && provider !== 'ollama') { this.log('❌ Set API key in Settings ⚙️ OR create .env file with OPENROUTER_KEY=your-key','err'); return; }
 
     this.clearLog();
 
