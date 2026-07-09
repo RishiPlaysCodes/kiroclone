@@ -39,21 +39,24 @@ export class AutonomousEngine {
   getPlanPrompt(userRequest) {
     return `You are a project planner. The user wants: "${userRequest}"
 
-List ALL files needed for a COMPLETE, production-ready project. Include every file.
+List ALL files needed for a COMPLETE, production-ready project.
 
 RESPOND ONLY with a JSON array of objects, nothing else:
 [
-  {"path": "index.html", "desc": "Main HTML page"},
-  {"path": "css/style.css", "desc": "Styles"},
-  {"path": "js/app.js", "desc": "Main logic"}
+  {"path": "index.html", "desc": "Main HTML page with full structure"},
+  {"path": "css/style.css", "desc": "Complete styles"},
+  {"path": "js/app.js", "desc": "Main JavaScript logic"}
 ]
 
-Rules:
-- Include ALL necessary files (HTML, CSS, JS, config, etc.)
-- Use proper folder structure (src/, css/, js/, components/, etc.)
-- For React: include package.json, index.html, src/App.jsx, src/main.jsx, etc.
-- For Node: include package.json, src/index.js, routes, middleware, etc.
-- Minimum 5 files, maximum 30 files
+IMPORTANT RULES:
+- ONLY include code files: .html, .css, .js, .json, .py, .ts, .jsx, .md
+- NEVER include image files (.jpg, .png, .gif, .svg, .ico)
+- NEVER include font files (.ttf, .woff, .woff2)
+- NEVER include binary files
+- Use CSS for icons/graphics (emoji, unicode, or CSS shapes)
+- Use placeholder colors/gradients instead of images
+- Keep it between 4-15 files maximum
+- Use simple flat structure (not too deeply nested)
 - Only output the JSON array, no explanation`;
   }
 
@@ -68,13 +71,16 @@ Rules:
 Generate the COMPLETE content for: ${filePath}
 Description: ${fileDesc}
 
-Rules:
-- Output ONLY the file content, no explanations, no markdown code blocks
-- Complete, working, production-ready code
-- Modern best practices
-- Must work with the other project files
-- If it's package.json, include all needed dependencies
-- If it imports from other project files, use correct relative paths
+CRITICAL RULES:
+- Output ONLY the raw file content, NO explanations, NO markdown code blocks
+- Write COMPLETE, WORKING, PRODUCTION-READY code with REAL content (not lorem ipsum)
+- Use REAL text content (not placeholder text)
+- For CSS: Include proper responsive design, animations, colors, layout
+- For HTML: Include complete structure with all sections fully built out
+- For JS: Include full interactivity and functionality
+- Do NOT reference external images - use CSS gradients, emojis, or unicode symbols
+- Do NOT use placeholder text like "Lorem ipsum" - write real meaningful content
+- Make it VISUALLY IMPRESSIVE with modern design
 
 Output the file content now:`;
   }

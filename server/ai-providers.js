@@ -35,9 +35,9 @@ export class AIProviders {
         name: 'OpenRouter',
         baseUrl: 'https://openrouter.ai/api/v1',
         models: [
-          { id: 'meta-llama/llama-3.3-70b-instruct:free', name: 'Llama 3.3 70B (Free)', context: 131072 },
+          { id: 'deepseek/deepseek-chat-v3-0324:free', name: 'DeepSeek V3 (Best Free)', context: 131072 },
           { id: 'qwen/qwen-2.5-coder-32b-instruct:free', name: 'Qwen Coder 32B (Free)', context: 32768 },
-          { id: 'deepseek/deepseek-chat-v3-0324:free', name: 'DeepSeek V3 (Free)', context: 131072 },
+          { id: 'meta-llama/llama-3.3-70b-instruct:free', name: 'Llama 3.3 70B (Free)', context: 131072 },
           { id: 'google/gemma-2-9b-it:free', name: 'Gemma 2 9B (Free)', context: 8192 },
         ],
         free: true,
