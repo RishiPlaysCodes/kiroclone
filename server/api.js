@@ -106,49 +106,148 @@ export async function handleApiRequest(req, res) {
       return json(res, { providers: ai.getProviders() });
     }
 
-    // === AUTONOMOUS MODE ===
+    // === AUTONOMOUS MODE - MULTI-STEP PROJECT BUILDER ===
+    
+    // Step 1: Create plan
+    if (p === '/api/autonomous/plan' && req.method === 'POST') {
+      const { prompt, provider, apiKey, model, projectId } = await parseBody(req);
+      if (!prompt || !provider || !model) return error(res, 'prompt, provider, model required');
+      if (!apiKey && provider !== 'ollama') return error(res, 'API key required');
+
+      const task = autonomous.createTask(prompt, projectId || 'default');
+      autonomous.updateTask(task.id, { status: 'planning' });
+
+      // Ask AI to create file plan
+      const planPrompt = autonomous.getPlanPrompt(prompt);
+      const config = await ai.chat(provider, apiKey, model, [
+        { role: 'system', content: 'You are a project planner. Output only JSON arrays.' },
+        { role: 'user', content: planPrompt }
+      ], false);
+
+      const response = await serverFetch(config.url, {
+        method: 'POST', headers: config.headers, body: JSON.stringify(config.body),
+      });
+
+      if (response.status !== 200) {
+        let errMsg = response.body;
+        try { errMsg = JSON.parse(response.body).error?.message || errMsg; } catch {}
+        autonomous.updateTask(task.id, { status: 'failed' });
+        return error(res, `AI Error: ${errMsg}`, 502);
+      }
+
+      const aiData = JSON.parse(response.body);
+      const reply = aiData.choices?.[0]?.message?.content || '';
+      const plan = autonomous.parsePlan(reply);
+
+      if (plan.length === 0) {
+        autonomous.updateTask(task.id, { status: 'failed' });
+        return error(res, 'AI could not create a plan. Try a more specific prompt.');
+      }
+
+      autonomous.updateTask(task.id, { status: 'planned', plan, totalFiles: plan.length });
+      return json(res, { task: autonomous.getTask(task.id) });
+    }
+
+    // Step 2: Generate one file at a time
+    if (p === '/api/autonomous/generate-file' && req.method === 'POST') {
+      const { taskId, fileIndex, provider, apiKey, model } = await parseBody(req);
+      const task = autonomous.getTask(taskId);
+      if (!task) return error(res, 'Task not found');
+
+      const fileInfo = task.plan[fileIndex];
+      if (!fileInfo) return error(res, 'File index out of range');
+
+      autonomous.updateTask(taskId, { status: 'generating', currentFile: fileInfo.path, progress: fileIndex });
+
+      const filePrompt = autonomous.getFilePrompt(task.prompt, fileInfo.path, fileInfo.desc, task.completed);
+      const config = await ai.chat(provider, apiKey, model, [
+        { role: 'system', content: 'Output ONLY file content. No explanations, no markdown wrapping. Just the raw file code.' },
+        { role: 'user', content: filePrompt }
+      ], false);
+
+      const response = await serverFetch(config.url, {
+        method: 'POST', headers: config.headers, body: JSON.stringify(config.body),
+      });
+
+      if (response.status !== 200) {
+        task.failed.push({ path: fileInfo.path, error: 'AI generation failed' });
+        return json(res, { success: false, error: 'Generation failed', task: autonomous.getTask(taskId) });
+      }
+
+      const aiData = JSON.parse(response.body);
+      const content = aiData.choices?.[0]?.message?.content || '';
+      const fileContent = autonomous.parseFileContent(content, fileInfo.path);
+
+      // Save file to project
+      await files.writeFile(task.projectId, fileInfo.path, fileContent);
+      task.completed.push({ path: fileInfo.path, status: 'done' });
+
+      // Check if done
+      if (task.completed.length + task.failed.length >= task.plan.length) {
+        autonomous.updateTask(taskId, { status: 'completed', progress: task.plan.length });
+      } else {
+        autonomous.updateTask(taskId, { progress: fileIndex + 1 });
+      }
+
+      return json(res, { success: true, file: fileInfo.path, task: autonomous.getTask(taskId) });
+    }
+
+    // Get task status
+    if (p === '/api/autonomous/status' && req.method === 'POST') {
+      const { taskId } = await parseBody(req);
+      const task = autonomous.getTask(taskId);
+      if (!task) return error(res, 'Task not found');
+      return json(res, { task });
+    }
+
+    // Legacy: single-shot execute (for simple tasks)
     if (p === '/api/autonomous/execute' && req.method === 'POST') {
       const { taskId, response: aiResponse, projectId, prompt, provider, apiKey, model } = await parseBody(req);
 
-      // If prompt is provided, make AI call first
       if (prompt && provider && model) {
         const systemPrompt = ai.getSystemPrompt('autonomous');
         const fullMessages = [{ role: 'system', content: systemPrompt }, { role: 'user', content: prompt }];
         const config = await ai.chat(provider, apiKey, model, fullMessages, false);
-        // Keep max_tokens reasonable for free tiers
         config.body.max_tokens = 4096;
 
         const aiRes = await serverFetch(config.url, {
-          method: 'POST',
-          headers: config.headers,
-          body: JSON.stringify(config.body),
+          method: 'POST', headers: config.headers, body: JSON.stringify(config.body),
         });
 
         if (aiRes.status !== 200) {
           let errMsg = aiRes.body;
-          try {
-            const errData = JSON.parse(aiRes.body);
-            errMsg = errData.error?.message || errData.message || aiRes.body;
-          } catch {}
+          try { errMsg = JSON.parse(aiRes.body).error?.message || errMsg; } catch {}
           return error(res, `AI Error: ${errMsg}`, 502);
         }
 
         const aiData = JSON.parse(aiRes.body);
         const reply = aiData.choices?.[0]?.message?.content || '';
-        const parsedFiles = autonomous.parseFilesFromResponse(reply);
+        const parsedFiles = autonomous.parseFileContent ? [] : []; // Use new parser
+        
+        // Try to extract files from response
+        const filePattern = /```(\w+):([^\n]+)\n([\s\S]*?)```/g;
+        const extractedFiles = [];
+        let match;
+        while ((match = filePattern.exec(reply)) !== null) {
+          extractedFiles.push({ path: match[2].trim(), content: match[3].trim() });
+        }
 
-        if (parsedFiles.length > 0 && projectId) {
-          const results = await files.writeMultipleFiles(projectId, parsedFiles);
+        if (extractedFiles.length > 0 && projectId) {
+          const results = await files.writeMultipleFiles(projectId, extractedFiles);
           return json(res, { success: true, files: results, response: reply });
         }
         return json(res, { success: true, files: [], response: reply });
       }
 
-      // If aiResponse is provided directly
       if (aiResponse) {
-        const parsedFiles = autonomous.parseFilesFromResponse(aiResponse);
-        if (parsedFiles.length > 0 && projectId) {
-          const results = await files.writeMultipleFiles(projectId, parsedFiles);
+        const filePattern = /```(\w+):([^\n]+)\n([\s\S]*?)```/g;
+        const extractedFiles = [];
+        let match;
+        while ((match = filePattern.exec(aiResponse)) !== null) {
+          extractedFiles.push({ path: match[2].trim(), content: match[3].trim() });
+        }
+        if (extractedFiles.length > 0 && projectId) {
+          const results = await files.writeMultipleFiles(projectId, extractedFiles);
           return json(res, { success: true, files: results });
         }
       }

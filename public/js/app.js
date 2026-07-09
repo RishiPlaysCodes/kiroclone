@@ -142,65 +142,81 @@ class App {
       const prompt = document.getElementById('auto-prompt')?.value?.trim();
       if (!prompt) return;
       const statusEl = document.getElementById('auto-status');
-      statusEl.innerHTML = '<div class="auto-step running">🔄 Starting...</div>';
+
+      const { provider, model, apiKey } = AI.getConfig();
+      if (!provider || !model) {
+        statusEl.innerHTML = '<p style="color:var(--error)">❌ Pehle AI Chat panel me Provider aur Model select karo!</p>';
+        return;
+      }
+      if (!apiKey && provider !== 'ollama') {
+        statusEl.innerHTML = '<p style="color:var(--error)">❌ Settings me API key daalo!</p>';
+        return;
+      }
+
+      // Ensure project exists
+      if (!Files.projectId) {
+        const name = prompt.split(' ').slice(0, 3).join('-').toLowerCase().replace(/[^a-z0-9-]/g,'') || 'auto-project';
+        const r = await fetch('/api/projects/create', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name }) });
+        const d = await r.json();
+        if (d.project) Files.load(d.project.id);
+        await new Promise(r => setTimeout(r, 500));
+      }
+
+      statusEl.innerHTML = '<div class="auto-step running">📋 Step 1: AI is creating project plan...</div>';
 
       try {
-        const { provider, model, apiKey } = AI.getConfig();
-        if (!provider || !model) {
-          statusEl.innerHTML = '<p style="color:var(--error)">❌ Pehle AI Chat panel me jaake Provider aur Model select karo!</p>';
-          return;
-        }
-        if (!apiKey && provider !== 'ollama') {
-          statusEl.innerHTML = '<p style="color:var(--error)">❌ Settings (gear icon) me jaake API key daalo!</p>';
-          return;
-        }
-
-        // Ensure project exists
-        if (!Files.projectId) {
-          const name = prompt.split(' ').slice(0, 3).join('-').toLowerCase().replace(/[^a-z0-9-]/g,'') || 'auto-project';
-          const r = await fetch('/api/projects/create', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name }) });
-          const d = await r.json();
-          if (d.project) Files.load(d.project.id);
-        }
-
-        statusEl.innerHTML = '<div class="auto-step running">🤖 AI is generating code... (may take 10-30 sec)</div>';
-
-        // Call server-side autonomous endpoint (handles AI call + file saving)
-        const res = await fetch('/api/autonomous/execute', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt,
-            provider,
-            apiKey,
-            model,
-            projectId: Files.projectId,
-            taskId: Date.now().toString()
-          })
+        // STEP 1: Get plan from AI
+        const planRes = await fetch('/api/autonomous/plan', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ prompt, provider, apiKey, model, projectId: Files.projectId })
         });
 
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || `Server error: ${res.status}`);
+        if (!planRes.ok) {
+          const err = await planRes.json().catch(() => ({}));
+          throw new Error(err.error || 'Plan creation failed');
         }
 
-        const data = await res.json();
+        const planData = await planRes.json();
+        const task = planData.task;
+        const plan = task.plan;
 
-        if (data.files?.length > 0) {
-          statusEl.innerHTML = `<div class="auto-step done">✅ Created ${data.files.length} files:</div>` +
-            data.files.map(f => `<div class="auto-step done">📄 ${f.path}</div>`).join('');
-          Files.load(Files.projectId);
-        } else {
-          statusEl.innerHTML = '<div class="auto-step done">✅ Done - response below in chat</div>';
+        statusEl.innerHTML = `<div class="auto-step done">✅ Plan ready: ${plan.length} files to create</div>` +
+          plan.map(f => `<div class="auto-step" id="step-${f.path.replace(/[^a-z0-9]/g,'-')}">⏳ ${f.path} - ${f.desc}</div>`).join('');
+
+        // STEP 2: Generate each file one by one
+        for (let i = 0; i < plan.length; i++) {
+          const fileId = `step-${plan[i].path.replace(/[^a-z0-9]/g,'-')}`;
+          const stepEl = document.getElementById(fileId);
+          if (stepEl) stepEl.className = 'auto-step running';
+          if (stepEl) stepEl.textContent = `🔄 Generating: ${plan[i].path}...`;
+
+          try {
+            const fileRes = await fetch('/api/autonomous/generate-file', {
+              method: 'POST', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ taskId: task.id, fileIndex: i, provider, apiKey, model })
+            });
+
+            const fileData = await fileRes.json();
+
+            if (fileData.success) {
+              if (stepEl) { stepEl.className = 'auto-step done'; stepEl.textContent = `✅ ${plan[i].path}`; }
+            } else {
+              if (stepEl) { stepEl.className = 'auto-step'; stepEl.textContent = `⚠️ ${plan[i].path} (failed)`; }
+            }
+          } catch (e) {
+            if (stepEl) { stepEl.className = 'auto-step'; stepEl.textContent = `❌ ${plan[i].path} - ${e.message}`; }
+          }
+
+          // Small delay to not hit rate limits
+          await new Promise(r => setTimeout(r, 1500));
         }
 
-        // Show AI response in chat too
-        if (data.response) {
-          this.switchPanel('chat');
-          this.addMsg('assistant', data.response);
-        }
+        // Done!
+        statusEl.innerHTML += `<div class="auto-step done" style="margin-top:8px;font-weight:600">🎉 Project complete! ${plan.length} files created.</div>`;
+        Files.load(Files.projectId);
+
       } catch (e) {
-        statusEl.innerHTML = `<p style="color:var(--error)">❌ ${e.message}</p>`;
+        statusEl.innerHTML += `<p style="color:var(--error);margin-top:8px">❌ ${e.message}</p>`;
       }
     });
   }

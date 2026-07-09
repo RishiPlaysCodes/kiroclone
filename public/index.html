@@ -92,14 +92,15 @@
 
       <!-- Autonomous Panel -->
       <div class="panel-content hidden" id="panel-autonomous">
-        <div class="panel-header"><h3>AUTONOMOUS</h3></div>
+        <div class="panel-header"><h3>⚡ AUTONOMOUS BUILD</h3></div>
         <div class="auto-info">
-          <p>🤖 Tell the AI what to build and it will create all files automatically.</p>
+          <p>🤖 <strong>Multi-step builder</strong> - Describe your project, AI will:</p>
+          <p>1. Create a file plan<br>2. Generate each file separately<br>3. Build 10-30+ files automatically</p>
           <div class="auto-input">
-            <textarea id="auto-prompt" placeholder="Describe what to build... e.g. 'Create a full todo app with React'" rows="4"></textarea>
-            <button class="btn btn-primary" id="auto-execute-btn">⚡ Execute</button>
+            <textarea id="auto-prompt" placeholder="Examples:&#10;• Build a full e-commerce app with React&#10;• Create a blog with Node.js backend&#10;• Make a portfolio website with animations&#10;• Build a chat app with WebSocket" rows="5"></textarea>
+            <button class="btn btn-primary" id="auto-execute-btn">⚡ Build Project</button>
           </div>
-          <div id="auto-status"></div>
+          <div id="auto-status" style="max-height:300px;overflow-y:auto;"></div>
         </div>
       </div>
 
