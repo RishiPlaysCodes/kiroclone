@@ -1,0 +1,13 @@
+{
+  "name": "kiro-clone",
+  "version": "1.0.0",
+  "description": "AI-powered coding assistant - free and open source",
+  "main": "server/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js"
+  },
+  "keywords": ["ai", "coding", "assistant", "developer-tools"],
+  "license": "MIT"
+}
